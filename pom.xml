@@ -8,6 +8,7 @@
     <description>Query elasticsearch using SQL</description>
     <name>elasticsearch-sql</name>
     <url>https://github.com/NLPchina/elasticsearch-sql/</url>
+
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -110,6 +111,45 @@
             <artifactId>jts</artifactId>
             <version>1.13</version>
         </dependency>
+
+        <!--KQL Dependencies-->
+        <dependency>
+            <groupId>groupId</groupId>
+            <artifactId>kql_engine</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr-runtime</artifactId>
+            <version>3.5.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr</artifactId>
+            <version>3.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr</artifactId>
+            <version>3.5</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/antlr-3.5.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr</artifactId>
+            <version>3.5</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/antlr-3.5.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>mongodb.jdbc</groupId>
+            <artifactId>unityjdbc</artifactId>
+            <version>1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/unityjdbc.jar</systemPath>
+        </dependency>
+        <!--End KQL Dependencies-->
     </dependencies>
 
 
