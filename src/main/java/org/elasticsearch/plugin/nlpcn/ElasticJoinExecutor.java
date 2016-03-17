@@ -5,7 +5,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.text.StringText;
+import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -137,9 +137,9 @@ public abstract class ElasticJoinExecutor {
         return mapWithAliases;
     }
 
-    protected void  onlyReturnedFields(Map<String, Object> fieldsMap, List<Field> required,boolean allRequired) {
+    protected void  onlyReturnedFields(Map<String, Object> fieldsMap, List<Field> required) {
         HashMap<String,Object> filteredMap = new HashMap<>();
-        if(allFieldsReturn || allRequired) {
+        if(allFieldsReturn) {
             filteredMap.putAll(fieldsMap);
             return;
         }
@@ -197,7 +197,7 @@ public abstract class ElasticJoinExecutor {
 
     protected InternalSearchHit createUnmachedResult( List<Field> secondTableReturnedFields, int docId, String t1Alias, String t2Alias, SearchHit hit) {
         String unmatchedId = hit.id() + "|0";
-        StringText unamatchedType = new StringText(hit.getType() + "|null");
+        Text unamatchedType = new Text(hit.getType() + "|null");
 
         InternalSearchHit searchHit = new InternalSearchHit(docId, unmatchedId, unamatchedType, hit.getFields());
 
@@ -214,9 +214,7 @@ public abstract class ElasticJoinExecutor {
     protected Map<String, Object> createNullsSource(List<Field> secondTableReturnedFields) {
         Map<String,Object> nulledSource = new HashMap<>();
         for(Field field : secondTableReturnedFields){
-            if(!field.getName().equals("*")){
-                nulledSource.put(field.getName(),null);
-            }
+            nulledSource.put(field.getName(),null);
         }
         return nulledSource;
     }

@@ -5,13 +5,12 @@ import com.alibaba.druid.sql.ast.expr.SQLQueryExpr;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.joda.time.DateTime;
-import org.elasticsearch.common.joda.time.format.DateTimeFormat;
-import org.elasticsearch.common.joda.time.format.DateTimeFormatter;
-import org.elasticsearch.indices.IndexMissingException;
+import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.highlight.HighlightField;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nlpcn.es4sql.domain.Select;
@@ -238,6 +237,9 @@ public class QueryTest {
 		for (SearchHit hit : response4.getHits()) {
 			Assert.assertEquals("m", hit.getSource().get("gender").toString().toLowerCase());
 		}
+
+		SearchHits response5 = query(String.format("SELECT * FROM %s/account WHERE NOT (gender = 'm' OR gender = 'f')", TEST_INDEX));
+		Assert.assertEquals(0, response5.getTotalHits());
 	}
 
 	@Test
@@ -350,8 +352,18 @@ public class QueryTest {
     }
 
     @Test
-    public void termQueryWithString() throws IOException, SqlParseException, SQLFeatureNotSupportedException{
+    public void termQueryWithStringIdentifier() throws IOException, SqlParseException, SQLFeatureNotSupportedException{
         SearchHits response = query(String.format("SELECT name FROM %s/gotCharacters WHERE name.firstname = term(brandon) LIMIT 1000", TEST_INDEX));
+        SearchHit[] hits = response.getHits();
+        Assert.assertEquals(1, response.getTotalHits());
+        SearchHit hit = hits[0];
+        String firstname =  ((Map<String,Object>) hit.getSource().get("name")).get("firstname").toString();
+        Assert.assertEquals("Brandon",firstname);
+    }
+
+    @Test
+    public void termQueryWithStringLiteral() throws IOException, SqlParseException, SQLFeatureNotSupportedException{
+        SearchHits response = query(String.format("SELECT name FROM %s/gotCharacters WHERE name.firstname = term('brandon') LIMIT 1000", TEST_INDEX));
         SearchHit[] hits = response.getHits();
         Assert.assertEquals(1, response.getTotalHits());
         SearchHit hit = hits[0];
@@ -400,11 +412,11 @@ public class QueryTest {
         DateTimeFormatter formatter = DateTimeFormat.forPattern(TS_DATE_FORMAT);
         DateTime dateToCompare = new DateTime(2015, 3, 15, 0, 0, 0);
 
-        SearchHits response = query(String.format("SELECT insert_time FROM %s/odbc WHERE insert_time < {ts '2015-03-15 00:00:00.000'}", TEST_INDEX));
+        SearchHits response = query(String.format("SELECT odbc_time FROM %s/odbc WHERE odbc_time < {ts '2015-03-15 00:00:00.000'}", TEST_INDEX));
         SearchHit[] hits = response.getHits();
         for(SearchHit hit : hits) {
             Map<String, Object> source = hit.getSource();
-			String insertTimeStr = (String) source.get("insert_time");
+			String insertTimeStr = (String) source.get("odbc_time");
 			insertTimeStr = insertTimeStr.replace("{ts '", "").replace("'}", "");
 
             DateTime insertTime = formatter.parseDateTime(insertTimeStr);
@@ -439,25 +451,25 @@ public class QueryTest {
 
 	@Test
 	public void missFilterSearch() throws IOException, SqlParseException, SQLFeatureNotSupportedException{
-		SearchHits response = query(String.format("SELECT * FROM %s/phrase WHERE insert_time IS missing", TEST_INDEX));
+		SearchHits response = query(String.format("SELECT * FROM %s/phrase WHERE insert_time2 IS missing", TEST_INDEX));
 		SearchHit[] hits = response.getHits();
 
 		// should be 2 according to the data.
 		Assert.assertEquals(response.getTotalHits(), 2);
 		for(SearchHit hit : hits) {
-			assertThat(hit.getSource(), not(hasKey("insert_time")));
+			assertThat(hit.getSource(), not(hasKey("insert_time2")));
 		}
 	}
 
 	@Test
 	public void notMissFilterSearch() throws IOException, SqlParseException, SQLFeatureNotSupportedException{
-		SearchHits response = query(String.format("SELECT * FROM %s/phrase WHERE insert_time IS NOT missing", TEST_INDEX));
+		SearchHits response = query(String.format("SELECT * FROM %s/phrase WHERE insert_time2 IS NOT missing", TEST_INDEX));
 		SearchHit[] hits = response.getHits();
 
 		// should be 2 according to the data.
 		Assert.assertEquals(response.getTotalHits(), 2);
 		for(SearchHit hit : hits) {
-			assertThat(hit.getSource(), hasKey("insert_time"));
+			assertThat(hit.getSource(), hasKey("insert_time2"));
 		}
 	}
 
@@ -567,7 +579,7 @@ public class QueryTest {
     @Test
     public void filterPolygonTest() throws SQLFeatureNotSupportedException, SqlParseException, InterruptedException {
         SearchHits results = query(String.format("SELECT * FROM %s/location WHERE GEO_INTERSECTS(place,'POLYGON ((102 2, 103 2, 103 3, 102 3, 102 2))')", TEST_INDEX));
-        org.junit.Assert.assertEquals(1,results.getTotalHits());
+        Assert.assertEquals(1,results.getTotalHits());
         SearchHit result = results.getAt(0);
         Assert.assertEquals("bigSquare",result.getSource().get("description"));
     }
@@ -575,14 +587,14 @@ public class QueryTest {
     @Test
     public void boundingBox() throws SQLFeatureNotSupportedException, SqlParseException, InterruptedException {
         SearchHits results = query(String.format("SELECT * FROM %s/location WHERE GEO_BOUNDING_BOX(center,100.0,1.0,101,0.0)", TEST_INDEX));
-        org.junit.Assert.assertEquals(1,results.getTotalHits());
+        Assert.assertEquals(1,results.getTotalHits());
         SearchHit result = results.getAt(0);
         Assert.assertEquals("square",result.getSource().get("description"));
     }
     @Test
     public void geoDistance() throws SQLFeatureNotSupportedException, SqlParseException, InterruptedException {
         SearchHits results = query(String.format("SELECT * FROM %s/location WHERE GEO_DISTANCE(center,'1km',100.5,0.500001)", TEST_INDEX));
-        org.junit.Assert.assertEquals(1,results.getTotalHits());
+        Assert.assertEquals(1,results.getTotalHits());
         SearchHit result = results.getAt(0);
         Assert.assertEquals("square",result.getSource().get("description"));
     }
@@ -590,7 +602,7 @@ public class QueryTest {
     @Test
     public void geoDistanceRange() throws SQLFeatureNotSupportedException, SqlParseException, InterruptedException {
         SearchHits results = query(String.format("SELECT * FROM %s/location WHERE GEO_DISTANCE_RANGE(center,'1m','1km',100.5,0.50001)", TEST_INDEX));
-        org.junit.Assert.assertEquals(1,results.getTotalHits());
+        Assert.assertEquals(1,results.getTotalHits());
         SearchHit result = results.getAt(0);
         Assert.assertEquals("square",result.getSource().get("description"));
     }
@@ -598,7 +610,7 @@ public class QueryTest {
     @Test
     public void geoCell() throws SQLFeatureNotSupportedException, SqlParseException, InterruptedException {
         SearchHits results = query(String.format("SELECT * FROM %s/location WHERE GEO_CELL(center,100.5,0.50001,7)", TEST_INDEX));
-        org.junit.Assert.assertEquals(1,results.getTotalHits());
+        Assert.assertEquals(1,results.getTotalHits());
         SearchHit result = results.getAt(0);
         Assert.assertEquals("square",result.getSource().get("description"));
     }
@@ -606,7 +618,7 @@ public class QueryTest {
     @Test
     public void geoPolygon() throws SQLFeatureNotSupportedException, SqlParseException, InterruptedException {
         SearchHits results = query(String.format("SELECT * FROM %s/location WHERE GEO_POLYGON(center,100,0,100.5,2,101.0,0)", TEST_INDEX));
-        org.junit.Assert.assertEquals(1,results.getTotalHits());
+        Assert.assertEquals(1,results.getTotalHits());
         SearchHit result = results.getAt(0);
         Assert.assertEquals("square",result.getSource().get("description"));
     }
@@ -809,24 +821,10 @@ public class QueryTest {
         Assert.assertTrue(response.getTotalHits() > 0);
     }
 
-    @Test(expected=IndexMissingException.class)
+    @Test(expected=IndexNotFoundException.class)
     public void multipleIndicesOneNotExistWithoutHint() throws IOException, SqlParseException, SQLFeatureNotSupportedException{
         SearchHits response = query(String.format("SELECT  * FROM %s,%s ", TEST_INDEX,"badindex"));
         Assert.assertTrue(response.getTotalHits() > 0);
-    }
-
-    @Test
-    public void routingRequestOneRounting() throws IOException, SqlParseException, SQLFeatureNotSupportedException{
-        SqlElasticSearchRequestBuilder request = getRequestBuilder(String.format("SELECT /*! ROUTINGS(hey) */ * FROM %s/account ", TEST_INDEX));
-        SearchRequestBuilder searchRequestBuilder = (SearchRequestBuilder) request.getBuilder();
-        Assert.assertEquals("hey",searchRequestBuilder.request().routing());
-    }
-
-    @Test
-    public void routingRequestMultipleRountings() throws IOException, SqlParseException, SQLFeatureNotSupportedException{
-        SqlElasticSearchRequestBuilder request = getRequestBuilder(String.format("SELECT /*! ROUTINGS(hey,bye) */ * FROM %s/account ", TEST_INDEX));
-        SearchRequestBuilder searchRequestBuilder = (SearchRequestBuilder) request.getBuilder();
-        Assert.assertEquals("hey,bye",searchRequestBuilder.request().routing());
     }
 
     //todo: find a way to check if scripts are enabled , uncomment before deploy.
@@ -847,31 +845,10 @@ public class QueryTest {
 //    }
 
 
-    @Test
-    public void highlightPreTagsAndPostTags() throws IOException, SqlParseException, SQLFeatureNotSupportedException{
-        String query = String.format("select /*! HIGHLIGHT(phrase,pre_tags : ['<b>'], post_tags : ['</b>']  ) */ " +
-                "* from %s/phrase " +
-                "where phrase like 'fox' " +
-                "order by _score",TEST_INDEX);
-        SearchHits hits = query(query);
-        for (SearchHit hit : hits){
-            HighlightField phrase = hit.getHighlightFields().get("phrase");
-            String highlightPhrase = phrase.getFragments()[0].string();
-            Assert.assertTrue(highlightPhrase.contains("<b>fox</b>"));
-        }
-
-    }
-
     private SearchHits query(String query) throws SqlParseException, SQLFeatureNotSupportedException, SQLFeatureNotSupportedException {
         SearchDao searchDao = MainTestSuite.getSearchDao();
         SqlElasticSearchRequestBuilder select = (SqlElasticSearchRequestBuilder) searchDao.explain(query).explain();
         return ((SearchResponse)select.get()).getHits();
-    }
-
-
-    private SqlElasticSearchRequestBuilder getRequestBuilder(String query) throws SqlParseException, SQLFeatureNotSupportedException, SQLFeatureNotSupportedException {
-        SearchDao searchDao = MainTestSuite.getSearchDao();
-        return  (SqlElasticSearchRequestBuilder) searchDao.explain(query).explain();
     }
 
     private SearchResponse getSearchResponse(String query) throws SqlParseException, SQLFeatureNotSupportedException, SQLFeatureNotSupportedException {

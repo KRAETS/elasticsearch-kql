@@ -4,8 +4,6 @@ import com.alibaba.druid.sql.ast.SQLExpr;
 import com.alibaba.druid.sql.ast.expr.SQLIntegerExpr;
 import com.alibaba.druid.sql.ast.expr.SQLPropertyExpr;
 import com.alibaba.druid.sql.ast.expr.SQLQueryExpr;
-import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlSelectQueryBlock;
-import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -17,7 +15,6 @@ import org.nlpcn.es4sql.parse.ElasticSqlExprParser;
 import org.nlpcn.es4sql.parse.FieldMaker;
 import org.nlpcn.es4sql.parse.ScriptFilter;
 import org.nlpcn.es4sql.parse.SqlParser;
-import org.nlpcn.es4sql.query.maker.FilterMaker;
 
 import java.io.IOException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -414,21 +411,12 @@ public class SqlParserTests {
     }
 
     @Test
-     public void indexWithDotsAndHyphen() throws SqlParseException {
+    public void indexWithDotsAndHyphen() throws SqlParseException {
         String query = "select * from data-2015.08.22";
         SQLExpr sqlExpr = queryToExpr(query);
         Select select = parser.parseSelect((SQLQueryExpr) sqlExpr);
         Assert.assertEquals(1,select.getFrom().size());
         Assert.assertEquals("data-2015.08.22",select.getFrom().get(0).getIndex());
-    }
-
-    @Test
-    public void indexWithSemiColons() throws SqlParseException {
-        String query = "select * from some;index";
-        SQLExpr sqlExpr = queryToExpr(query);
-        Select select = parser.parseSelect((SQLQueryExpr) sqlExpr);
-        Assert.assertEquals(1,select.getFrom().size());
-        Assert.assertEquals("some;index",select.getFrom().get(0).getIndex());
     }
 
     @Test
@@ -778,26 +766,6 @@ public class SqlParserTests {
         Assert.assertEquals(Condition.class,where.getClass());
         Condition condition = (Condition) where;
         Assert.assertEquals("3", condition.getName());
-    }
-
-    @Test
-    public void likeTestWithEscaped() throws SqlParseException {
-        String query = "select * from x where name like '[_]hey_%[%]'";
-        Select select = parser.parseSelect((SQLQueryExpr) queryToExpr(query));
-        BoolFilterBuilder explan = FilterMaker.explan(select.getWhere());
-        String filterAsString = explan.toString();
-        Assert.assertTrue(filterAsString.contains("_hey?*%"));
-    }
-
-
-    @Test
-    public void complexNestedAndOtherQuery() throws SqlParseException {
-        String query = "select * from x where nested('path',path.x=3) and y=3";
-        Select select = parser.parseSelect((SQLQueryExpr) queryToExpr(query));
-        LinkedList<Where> wheres = select.getWhere().getWheres();
-        Assert.assertEquals(2, wheres.size());
-        Assert.assertEquals("AND path NESTED_COMPLEX AND ( AND path.x EQ 3 ) ",wheres.get(0).toString());
-        Assert.assertEquals("AND y EQ 3",wheres.get(1).toString());
     }
 
     private SQLExpr queryToExpr(String query) {

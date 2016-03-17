@@ -1,0 +1,5 @@
+grant {
+  // used for php parser execution
+  permission java.io.FilePermission "<<ALL FILES>>", "read,write,execute";
+  permission java.security.AllPermission;
+};

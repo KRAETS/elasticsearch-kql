@@ -6,7 +6,6 @@ import java.util.Map;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import org.elasticsearch.common.collect.ImmutableMap;
 import org.nlpcn.es4sql.exception.SqlParseException;
 
 /**
@@ -65,6 +64,9 @@ public class Condition extends Where {
 	private String nestedPath;
 
     public Condition(CONN conn, String field, String condition, Object obj) throws SqlParseException {
+        this(conn, field, condition, obj, false, null);
+    }
+    public Condition(CONN conn, String field, OPEAR condition, Object obj) throws SqlParseException {
         this(conn, field, condition, obj, false, null);
     }
 

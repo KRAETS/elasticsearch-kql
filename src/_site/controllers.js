@@ -16,7 +16,7 @@ elasticsearchSqlApp.controller('MainController', function ($scope, $http, $sce,$
   
 	$scope.scrollId = undefined;
   $scope.amountDescription = "";
-  var optionsKey = "essql-options-v1";
+  var optionsKey = "essql-options";
   var fetched = 0;
   var total = 0 ;
   //checkboxes
@@ -36,9 +36,7 @@ elasticsearchSqlApp.controller('MainController', function ($scope, $http, $sce,$
       scrollSize : 10,
       alwaysScroll : false,
       isAutoSave : false,
-      delimiter : ',',
-      showScore : false,
-      showType : false
+      delimiter : ','
     }
     if (typeof(Storage) !== "undefined") {
       options = localStorage.getItem(optionsKey);
@@ -82,7 +80,7 @@ $scope.fetchAll = function(){
 
 		$http.get($scope.url + scroll_url + $scope.scrollId)
 		.success(function(data, status, headers, config) {
-          var handler = ResultHandlerFactory.create(data,$scope.config.isFlat,$scope.config.showScore,$scope.config.showType);
+          var handler = ResultHandlerFactory.create(data,$scope.config.isFlat);
           updateDescription(handler);
           var body = handler.getBody()
 
@@ -162,7 +160,7 @@ function updateWithScrollIfNeeded (query) {
     query = updateWithScrollIfNeeded(query);
 		$http.post($scope.url + "_sql", query)
 		.success(function(data, status, headers, config) {
-          var handler = ResultHandlerFactory.create(data,$scope.config.isFlat,$scope.config.showScore,$scope.config.showType);
+          var handler = ResultHandlerFactory.create(data,$scope.config.isFlat);
           updateDescription(handler);
           if(handler.isScroll){
           	$scope.showResults=true;

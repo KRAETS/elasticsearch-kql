@@ -1,10 +1,7 @@
 package org.elasticsearch.plugin.nlpcn.executors;
 
-import com.sun.org.apache.xpath.internal.operations.Mult;
-import org.elasticsearch.cluster.routing.allocation.decider.Decision;
-import org.elasticsearch.common.base.Joiner;
+import com.google.common.base.Joiner;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHitField;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -14,13 +11,11 @@ import org.elasticsearch.search.aggregations.bucket.SingleBucketAggregation;
 import org.elasticsearch.search.aggregations.bucket.geogrid.GeoHashGrid;
 import org.elasticsearch.search.aggregations.metrics.MetricsAggregator;
 import org.elasticsearch.search.aggregations.metrics.NumericMetricsAggregation;
-import org.elasticsearch.search.aggregations.metrics.geobounds.GeoBounds;
 import org.elasticsearch.search.aggregations.metrics.percentiles.Percentile;
 import org.elasticsearch.search.aggregations.metrics.percentiles.Percentiles;
 import org.elasticsearch.search.aggregations.metrics.scripted.ScriptedMetric;
 import org.elasticsearch.search.aggregations.metrics.stats.Stats;
 import org.elasticsearch.search.aggregations.metrics.stats.extended.ExtendedStats;
-import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
 import org.nlpcn.es4sql.Util;
 
 import java.util.*;
@@ -29,13 +24,9 @@ import java.util.*;
  * Created by Eliran on 27/12/2015.
  */
 public class CSVResultsExtractor {
-    private final boolean includeType;
-    private final boolean includeScore;
     private int currentLineIndex;
 
-    public CSVResultsExtractor(boolean includeScore, boolean includeType) {
-        this.includeScore = includeScore;
-        this.includeType = includeType;
+    public CSVResultsExtractor() {
         this.currentLineIndex = 0;
     }
 
@@ -61,6 +52,8 @@ public class CSVResultsExtractor {
             //todo: need to handle more options for aggregations:
             //Aggregations that inhrit from base
             //ScriptedMetric
+            //TopHits
+            //GeoBounds
 
             return new CSVResult(headers,csvLines);
 
@@ -82,21 +75,12 @@ public class CSVResultsExtractor {
         //we want to skip singleBucketAggregations (nested,reverse_nested,filters)
         if(aggregation instanceof SingleBucketAggregation){
             Aggregations singleBucketAggs = ((SingleBucketAggregation) aggregation).getAggregations();
-            handleAggregations(singleBucketAggs, headers, lines);
+            handleAggregations(singleBucketAggs,headers,lines);
             return;
         }
         if(aggregation instanceof NumericMetricsAggregation){
-            handleNumericMetricAggregation(headers, lines.get(currentLineIndex), aggregation);
+            handleNumericMetricAggregation(headers,lines.get(currentLineIndex),aggregation);
             return;
-        }
-        if(aggregation instanceof GeoBounds){
-            handleGeoBoundsAggregation(headers, lines, (GeoBounds) aggregation);
-            return;
-        }
-        if(aggregation instanceof TopHits){
-            //todo: handle this . it returns hits... maby back to normal?
-            //todo: read about this usages
-            // TopHits topHitsAggregation = (TopHits) aggregation;
         }
         if(aggregation instanceof MultiBucketsAggregation){
             MultiBucketsAggregation bucketsAggregation = (MultiBucketsAggregation) aggregation;
@@ -115,7 +99,7 @@ public class CSVResultsExtractor {
             boolean firstLine = true;
             for (MultiBucketsAggregation.Bucket bucket : buckets) {
                 //each bucket need to add new line with current line copied => except for first line
-                String key = bucket.getKeyAsText().string();
+                String key = bucket.getKeyAsString();
                 if(firstLine){
                     firstLine = false;
                 }
@@ -130,20 +114,6 @@ public class CSVResultsExtractor {
             }
         }
 
-    }
-
-    private void handleGeoBoundsAggregation(List<String> headers, List<List<String>> lines, GeoBounds geoBoundsAggregation) {
-        String geoBoundAggName = geoBoundsAggregation.getName();
-        headers.add(geoBoundAggName+".topLeft.lon");
-        headers.add(geoBoundAggName+".topLeft.lat");
-        headers.add(geoBoundAggName+".bottomRight.lon");
-        headers.add(geoBoundAggName+".bottomRight.lat");
-        List<String> line = lines.get(this.currentLineIndex);
-        line.add(String.valueOf(geoBoundsAggregation.topLeft().getLon()));
-        line.add(String.valueOf(geoBoundsAggregation.topLeft().getLat()));
-        line.add(String.valueOf(geoBoundsAggregation.bottomRight().getLon()));
-        line.add(String.valueOf(geoBoundsAggregation.bottomRight().getLat()));
-        lines.add(line);
     }
 
     private  List<String> fillHeaderAndCreateLineForNumericAggregations(Aggregations aggregations, List<String> header) throws CsvExtractorException {
@@ -258,27 +228,10 @@ public class CSVResultsExtractor {
         Set<String> csvHeaders = new HashSet<>();
         for(SearchHit hit : hits){
             Map<String, Object> doc = hit.sourceAsMap();
-            Map<String, SearchHitField> fields = hit.getFields();
-            for(SearchHitField searchHitField : fields.values()){
-                doc.put(searchHitField.getName(),searchHitField.value());
-            }
-            mergeHeaders(csvHeaders, doc, flat);
-            if(this.includeScore){
-                doc.put("_score", hit.score());
-            }
-            if(this.includeType){
-                doc.put("_type",hit.type());
-            }
+            mergeHeaders(csvHeaders,doc,flat);
             docsAsMap.add(doc);
         }
-        ArrayList<String> headersList = new ArrayList<>(csvHeaders);
-        if (this.includeScore){
-            headersList.add("_score");
-        }
-        if (this.includeType){
-            headersList.add("_type");
-        }
-        return headersList;
+        return new ArrayList<>(csvHeaders);
     }
 
     private String findFieldValue(String header, Map<String, Object> doc, boolean flat, String separator) {

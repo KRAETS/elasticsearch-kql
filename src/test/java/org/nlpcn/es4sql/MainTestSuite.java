@@ -2,21 +2,29 @@ package org.nlpcn.es4sql;
 
 
 
+import com.google.common.io.ByteStreams;
+import org.apache.lucene.index.IndexNotFoundException;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.deletebyquery.DeleteByQueryAction;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.io.ByteStreams;
+
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.indices.IndexMissingException;
+
+import org.elasticsearch.plugin.deletebyquery.DeleteByQueryPlugin;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 import java.io.FileInputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import static org.nlpcn.es4sql.TestsConstants.*;
 
 @RunWith(Suite.class)
@@ -25,7 +33,7 @@ import static org.nlpcn.es4sql.TestsConstants.*;
 		MethodQueryTest.class,
 		AggregationTest.class,
         JoinTests.class,
-		DeleteTest.class,
+//		DeleteTest.class,
 		ExplainTest.class,
         WktToGeoJsonConverterTests.class,
         SqlParserTests.class,
@@ -34,23 +42,26 @@ import static org.nlpcn.es4sql.TestsConstants.*;
 })
 public class MainTestSuite {
 
+
 	private static TransportClient client;
 	private static SearchDao searchDao;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		client = new TransportClient();
-		client.addTransportAddress(getTransportAddress());
+
+        client = TransportClient.builder().addPlugin(DeleteByQueryPlugin.class).build().addTransportAddress(getTransportAddress());
+
 
 		NodesInfoResponse nodeInfos = client.admin().cluster().prepareNodesInfo().get();
 		String clusterName = nodeInfos.getClusterName().value();
 		System.out.println(String.format("Found cluster... cluster name: %s", clusterName));
 
 		// Load test data.
-		deleteQuery(TEST_INDEX);
+        if(client.admin().indices().prepareExists(TEST_INDEX).execute().actionGet().isExists()){
+            client.admin().indices().prepareDelete(TEST_INDEX).get();
+        }
 		loadBulk("src/test/resources/accounts.json");
 		loadBulk("src/test/resources/online.json");
-        preparePhrasesIndex();
         loadBulk("src/test/resources/phrases.json");
         loadBulk("src/test/resources/dogs.json");
         loadBulk("src/test/resources/peoples.json");
@@ -75,19 +86,6 @@ public class MainTestSuite {
 
 		System.out.println("Finished the setup process...");
 	}
-
-    private static void preparePhrasesIndex() {
-        String dataMapping = "{  \"phrase\": {" +
-                " \"properties\": {\n" +
-                "          \"phrase\": {\n" +
-                "            \"type\": \"string\",\n" +
-                "            \"store\": true\n" +
-                "          }" +
-                "       }"+
-                "   }" +
-                "}";
-        client.admin().indices().preparePutMapping(TEST_INDEX).setType("phrase").setSource(dataMapping).execute().actionGet();
-    }
 
     private static void prepareNestedTypeIndex() {
 
@@ -156,8 +154,8 @@ public class MainTestSuite {
 	 * @param typeName the type to delete
 	 */
 	public static void deleteQuery(String indexName, String typeName) {
-		try {
-			DeleteByQueryRequestBuilder deleteQuery = new DeleteByQueryRequestBuilder(client);
+
+			DeleteByQueryRequestBuilder deleteQuery = new DeleteByQueryRequestBuilder(client, DeleteByQueryAction.INSTANCE);
 			deleteQuery.setIndices(indexName);
 			if (typeName != null) {
 				deleteQuery.setTypes(typeName);
@@ -166,10 +164,8 @@ public class MainTestSuite {
 
 			deleteQuery.get();
 			System.out.println(String.format("Deleted index %s and type %s", indexName, typeName));
-		}
-		catch(IndexMissingException e) {
-			System.out.println(String.format("Failed to delete index, Index %s does not exist, continue any way", indexName));
-		}
+
+
 	}
 
 
@@ -182,7 +178,7 @@ public class MainTestSuite {
 	public static void loadBulk(String jsonPath) throws Exception {
 		System.out.println(String.format("Loading file %s into elasticsearch cluster", jsonPath));
 
-		BulkRequestBuilder bulkBuilder = new BulkRequestBuilder(client);
+		BulkRequestBuilder bulkBuilder = client.prepareBulk();
 		byte[] buffer = ByteStreams.toByteArray(new FileInputStream(jsonPath));
 		bulkBuilder.add(buffer, 0, buffer.length, TEST_INDEX, null);
 		BulkResponse response = bulkBuilder.get();
@@ -219,7 +215,7 @@ public class MainTestSuite {
         String dataMapping = "{\n" +
                 "\t\"odbc\" :{\n" +
                 "\t\t\"properties\":{\n" +
-                "\t\t\t\"insert_time\":{\n" +
+                "\t\t\t\"odbc_time\":{\n" +
                 "\t\t\t\t\"type\":\"date\",\n" +
                 "\t\t\t\t\"format\": \"{'ts' ''yyyy-MM-dd HH:mm:ss.SSS''}\"\n" +
                 "\t\t\t},\n" +
@@ -241,7 +237,7 @@ public class MainTestSuite {
 		return client;
 	}
 
-	private static InetSocketTransportAddress getTransportAddress() {
+	private static InetSocketTransportAddress getTransportAddress() throws UnknownHostException {
 		String host = System.getenv("ES_TEST_HOST");
 		String port = System.getenv("ES_TEST_PORT");
 
@@ -256,7 +252,7 @@ public class MainTestSuite {
 		}
 
 		System.out.println(String.format("Connection details: host: %s. port:%s.", host, port));
-		return new InetSocketTransportAddress(host, Integer.parseInt(port));
+		return new InetSocketTransportAddress(InetAddress.getByName(host), Integer.parseInt(port));
 	}
 
 }

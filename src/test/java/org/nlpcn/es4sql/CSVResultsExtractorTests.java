@@ -131,15 +131,15 @@ public class CSVResultsExtractorTests {
     }
     @Test
     public void joinSearchResultNotNestedNotFlatNoAggs() throws SqlParseException, SQLFeatureNotSupportedException, Exception {
-        String query = String.format("select c.gender , h.name,h.words from %s/gotCharacters c " +
+        String query = String.format("select c.gender , h.hname,h.words from %s/gotCharacters c " +
                 "JOIN %s/gotHouses h " +
-                "on h.name = c.house ",TEST_INDEX,TEST_INDEX);
+                "on h.hname = c.house ",TEST_INDEX,TEST_INDEX);
         CSVResult csvResult = getCsvResult(false, query);
 
         List<String> headers = csvResult.getHeaders();
         Assert.assertEquals(3, headers.size());
         Assert.assertTrue("c.gender should be on headers", headers.contains("c.gender"));
-        Assert.assertTrue("h.words should be on headers", headers.contains("h.words"));
+        Assert.assertTrue("h.hname should be on headers", headers.contains("h.hname"));
         Assert.assertTrue("h.words should be on headers", headers.contains("h.words"));
 
         List<String> lines = csvResult.getLines();
@@ -338,52 +338,10 @@ public class CSVResultsExtractorTests {
 
         List<String> lines = csvResult.getLines();
         Assert.assertEquals(1, lines.size());
-        Assert.assertEquals("32.0,32.0,34.0,36.0,38.0,40.0,40.0", lines.get(0));
+        Assert.assertEquals("32.0,32.0,34.0,36.0,38.0,40.0,40.0",lines.get(0));
     }
 
-    @Test
-    public void includeTypeAndNotScore() throws SqlParseException, SQLFeatureNotSupportedException, Exception {
-        String query = String.format("select age , firstname from %s/account where age > 31 limit 2", TEST_INDEX);
-        CSVResult csvResult = getCsvResult(false, query,false,true);
-        List<String> headers = csvResult.getHeaders();
-        Assert.assertEquals(3,headers.size());
-        Assert.assertTrue(headers.contains("age"));
-        Assert.assertTrue(headers.contains("firstname"));
-        Assert.assertTrue(headers.contains("_type"));
-        List<String> lines = csvResult.getLines();
-        Assert.assertTrue(lines.get(0).contains(",account") || lines.get(0).contains("account,"));
-        Assert.assertTrue(lines.get(1).contains(",account")|| lines.get(1).contains("account,"));
-    }
 
-    @Test
-    public void includeScoreAndNotType() throws SqlParseException, SQLFeatureNotSupportedException, Exception {
-        String query = String.format("select age , firstname from %s/account where age > 31 limit 2", TEST_INDEX);
-        CSVResult csvResult = getCsvResult(false, query,true,false);
-        List<String> headers = csvResult.getHeaders();
-        Assert.assertEquals(3, headers.size());
-        Assert.assertTrue(headers.contains("age"));
-        Assert.assertTrue(headers.contains("firstname"));
-        Assert.assertTrue(headers.contains("_score"));
-        List<String> lines = csvResult.getLines();
-        Assert.assertTrue(lines.get(0).contains(",1.0"));
-        Assert.assertTrue(lines.get(1).contains(",1.0"));
-    }
-
-    @Test
-    public void includeScoreAndType() throws SqlParseException, SQLFeatureNotSupportedException, Exception {
-        String query = String.format("select age , firstname from %s/account where age > 31 limit 2", TEST_INDEX);
-        CSVResult csvResult = getCsvResult(false, query,true,true);
-        List<String> headers = csvResult.getHeaders();
-        Assert.assertEquals(4, headers.size());
-        Assert.assertTrue(headers.contains("age"));
-        Assert.assertTrue(headers.contains("firstname"));
-        Assert.assertTrue(headers.contains("_score"));
-        Assert.assertTrue(headers.contains("_type"));
-        List<String> lines = csvResult.getLines();
-        System.out.println(lines.get(0));
-        Assert.assertTrue(lines.get(0).contains("account,1.0") || lines.get(0).contains("1.0,account"));
-        Assert.assertTrue(lines.get(1).contains("account,1.0") || lines.get(1).contains("1.0,account"));
-    }
 
     /* todo: more tests:
     * filter/nested and than metric
@@ -391,30 +349,14 @@ public class CSVResultsExtractorTests {
     * geo
      */
 
-/* test for scripted fields
-    @Test
-    public void scriptedField() throws SqlParseException, SQLFeatureNotSupportedException, Exception {
-        String query = String.format("select age+1 as agePlusOne ,age , firstname from %s/account where age =  31 limit 1", TEST_INDEX);
-        CSVResult csvResult = getCsvResult(false, query,false,false);
-        List<String> headers = csvResult.getHeaders();
-        Assert.assertEquals(3,headers.size());
-        Assert.assertTrue(headers.contains("agePlusOne"));
-        Assert.assertTrue(headers.contains("age"));
-        Assert.assertTrue(headers.contains("firstname"));
-        List<String> lines = csvResult.getLines();
-        Assert.assertTrue(lines.get(0).contains("32,31") || lines.get(0).contains("32.0,31.0"));
-    }
-*/
 
     private CSVResult getCsvResult(boolean flat, String query) throws SqlParseException, SQLFeatureNotSupportedException, Exception, CsvExtractorException {
-        return getCsvResult(flat,query,false,false);
-    }
-
-    private CSVResult getCsvResult(boolean flat, String query,boolean includeScore , boolean includeType) throws SqlParseException, SQLFeatureNotSupportedException, Exception, CsvExtractorException {
         SearchDao searchDao = MainTestSuite.getSearchDao();
         QueryAction queryAction = searchDao.explain(query);
         Object execution =  QueryActionElasticExecutor.executeAnyAction(searchDao.getClient(), queryAction);
-        return new CSVResultsExtractor(includeScore,includeType).extractResults(execution, flat, ",");
+        return new CSVResultsExtractor().extractResults(execution, flat, ",");
     }
+
+
 
 }
