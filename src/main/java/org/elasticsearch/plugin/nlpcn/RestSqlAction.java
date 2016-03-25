@@ -31,7 +31,7 @@ public class RestSqlAction extends BaseRestHandler {
 
 	@Override
 	protected void handleRequest(RestRequest request, RestChannel channel, final Client client) throws Exception {
-		String sql = request.param("sql");
+		String sql = request.param("kql");
 
 		if (sql == null) {
 			sql = request.content().toUtf8();
