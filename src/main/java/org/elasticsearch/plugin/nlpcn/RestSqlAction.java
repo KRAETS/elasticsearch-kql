@@ -91,7 +91,7 @@ public class RestSqlAction extends BaseRestHandler {
 //						throw new Exception("Struggling"+e.toString());
 //					}
 					conversion=conversion.trim();
-					conversion = conversion.replaceAll("'","");
+//					conversion = conversion.replaceAll("'","");
 					System.out.println("Converted query to:"+conversion);
 					return conversion;
 				}

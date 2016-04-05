@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="../../favicon.ico">
 
-    <title>Elasticsearch-sql client</title>
+    <title>Elasticsearch-kql client</title>
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -16,14 +16,14 @@
  
   </head>
 
-  <body ng-app="elasticsearchSqlApp" ng-controller="MainController">
+  <body ng-app="elasticsearchKqlApp" ng-controller="MainController">
 
     <!-- Top navbar -->
     <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
       <div class="container-fluid">
         <div class="navbar-header">
           
-          <a class="navbar-brand" href="#">Elasticsearch-sql</a>
+          <a class="navbar-brand" href="#">Elasticsearch-kql</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav navbar-right">
@@ -59,10 +59,10 @@
           <h3>Help</h3>
         </div>
         <div class="modal-body">
-          <h4>SQL queries</h4>
+          <h4>KQL queries</h4>
 
           <p>
-            Write your SQL query and run it against elasticsearch. The results will be displayed in the table. You can use autocomple to write
+            Write your KQL query and run it against elasticsearch. The results will be displayed in the table. You can use autocomple to write
             your queries easier.
           </p>
           <p> Enter our <a href="https://github.com/NLPchina/elasticsearch-sql/wiki">Wiki</a> for more Information on how to query </p>
@@ -154,11 +154,8 @@
 
 
     </div>
-
-            
-      
         <div class="col-sm-8 col-md-10 main">
-          <h1 class="page-header">SQL Query</h1>
+          <h1 class="page-header">KQL Query</h1>
 
           <!-- Query area -->
           <div class="search-area">

@@ -3,11 +3,12 @@
         [
           		{
  	       			"name": "_",
-                    "tags":  [ 
-                    {"name": "servername"},
-                    {"name":"client"}, 
-                    {"name":"host"}, 
-                    {"name":"user"}   
+                    "tags":
+                    [
+                      {"name": "servername"},
+                      {"name":"client"},
+                      {"name":"host"},
+                      {"name":"user"}
                     ]
   				}
   		]		
