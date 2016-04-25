@@ -148,8 +148,8 @@ function updateWithScrollIfNeeded (query) {
 		$scope.searchLoading = true;
 		
 		$scope.resultExplan = false;
-    tablePresenter.destroy();
-    $scope.$apply();
+        tablePresenter.destroy();
+        $scope.$apply();
 		saveUrl()
 
     var query = window.editor.getValue();
@@ -158,7 +158,7 @@ function updateWithScrollIfNeeded (query) {
       query = selectedQuery;
     }
     query = updateWithScrollIfNeeded(query);
-		$http.post($scope.url + "_sql", query)
+		$http.post($scope.url + "_kql", query)
 		.success(function(data, status, headers, config) {
           var handler = ResultHandlerFactory.create(data,$scope.config.isFlat);
           updateDescription(handler);
@@ -222,10 +222,10 @@ function updateWithScrollIfNeeded (query) {
 		$scope.$apply();
 
 
-		saveUrl()
+		saveUrl();
 
         var query = window.editor.getValue();
-		$http.post($scope.url + "_sql/_explain", query)
+		$http.post($scope.url + "_kql/_explain", query)
 		.success(function(data, status, headers, config) {
 					 $scope.resultExplan = true;
 				   window.explanResult.setValue(JSON.stringify(data, null, "\t"));

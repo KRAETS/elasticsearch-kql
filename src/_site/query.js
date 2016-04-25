@@ -39,10 +39,10 @@ var DefaultQueryResultHandler = function(data,isFlat) {
 
     // createScheme by traverse hits field
     function createScheme() {
-        var hits = data.hits.hits
-        scheme = []
+        var hits = data.hits.hits;
+        scheme = [];
         for(index=0; index<hits.length; index++) {
-            hit = hits[index]
+            hit = hits[index];
             header = $.extend({},hit._source,hit.fields)
             if(isFlat){
                 findKeysRecursive(scheme,header,"");
@@ -55,16 +55,15 @@ var DefaultQueryResultHandler = function(data,isFlat) {
                     }
                 }       
             }
-            
         }
         return scheme
     }
     
 
     this.data = data
-    this.head = createScheme()
+    this.head = createScheme();
     this.isFlat = isFlat;
-    this.scrollId = data["_scroll_id"]
+    this.scrollId = data["_scroll_id"];
     this.isScroll = this.scrollId!=undefined && this.scrollId!="";
 };
 
@@ -82,8 +81,8 @@ DefaultQueryResultHandler.prototype.getHead = function() {
 };
 
 DefaultQueryResultHandler.prototype.getBody = function() {
-    var hits = this.data.hits.hits
-    var body = []
+    var hits = this.data.hits.hits;
+    var body = [];
     for(var i = 0; i < hits.length; i++) {
         var row = hits[i]._source;
         if("fields" in hits[i]){

@@ -31,13 +31,20 @@ public class RestSqlAction extends BaseRestHandler {
 
 	@Override
 	protected void handleRequest(RestRequest request, RestChannel channel, final Client client) throws Exception {
+
 		String sql = request.param("kql");
 
 		if (sql == null) {
 			sql = request.content().toUtf8();
 		}
 		//KQL Extension
-		sql = translateKQL(sql);
+		try {
+			sql = translateKQL(sql);
+		}
+		catch (Exception e){
+			System.out.println("Could not parse kql");
+		}
+		sql += " limit "+request.param("limit");
 		//END Kql Extension
 		SearchDao searchDao = new SearchDao(client);
         QueryAction queryAction= searchDao.explain(sql);
