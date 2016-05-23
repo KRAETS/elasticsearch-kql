@@ -1,5 +1,5 @@
 
-var elasticsearchSqlApp = angular.module('elasticsearchSqlApp', ["ngAnimate", "ngSanitize"]);
+var elasticsearchSqlApp = angular.module('elasticsearchKqlApp', ["ngAnimate", "ngSanitize"]);
 
 elasticsearchSqlApp.controller('MainController', function ($scope, $http, $sce,$compile) {
 	scroll_url = "_search/scroll?scroll=1m&scroll_id=";
@@ -11,7 +11,7 @@ elasticsearchSqlApp.controller('MainController', function ($scope, $http, $sce,$
 	$scope.searchLoading = false;
 	$scope.explainLoading = false;
 	$scope.nextLoading = false;
-  $scope.fetchAllLoading = false;
+    $scope.fetchAllLoading = false;
 	$scope.resultExplan = false;
   
 	$scope.scrollId = undefined;
@@ -52,7 +52,7 @@ elasticsearchSqlApp.controller('MainController', function ($scope, $http, $sce,$
         $http.get($scope.url + "_nodes/" + data.name).success(function (nodeData) {
             var node = nodeData.nodes[Object.keys(nodeData.nodes)[0]];
             angular.forEach(node.plugins, function (plugin) {
-                if (plugin.name === "sql") {
+                if (plugin.name === "kql") {
                     $scope.version = plugin.version;
                 }
             });
@@ -74,7 +74,7 @@ $scope.fetchAll = function(){
 
 
 		if($scope.scrollId == undefined || $scope.scrollId == "" ){
-			$scope.error = "tryed scrolling with empty scrollId";
+			$scope.error = "tried scrolling with empty scrollId";
 			return;
 		}
 
@@ -158,7 +158,8 @@ function updateWithScrollIfNeeded (query) {
       query = selectedQuery;
     }
     query = updateWithScrollIfNeeded(query);
-		$http.post($scope.url + "_kql", query)
+        var txt = $scope.url + "_kql";
+		$http.get($scope.url + "_kql?limit=10000&kql="+query)
 		.success(function(data, status, headers, config) {
           var handler = ResultHandlerFactory.create(data,$scope.config.isFlat);
           updateDescription(handler);
@@ -227,8 +228,14 @@ function updateWithScrollIfNeeded (query) {
         var query = window.editor.getValue();
 		$http.post($scope.url + "_kql/_explain", query)
 		.success(function(data, status, headers, config) {
-					 $scope.resultExplan = true;
-				   window.explanResult.setValue(JSON.stringify(data, null, "\t"));
+            $scope.resultExplan = true;
+            window.explanResult.setValue(JSON.stringify(data, null, "\t"));
+            $http.post($scope.url+"_kql/_explain_aexp", query).success(function (data,status,headers,config) {
+                window.explainAexp.setValue(JSON.stringify(""+data, null, "\t"));
+            }).finally(function () {
+                $scope.explainLoading = false;
+                $scope.$apply()
+            })
         })
         .error(function(data, status, headers, config) {
         	$scope.resultExplan = false;
@@ -238,10 +245,6 @@ function updateWithScrollIfNeeded (query) {
     	  else {
     	  	$scope.error = JSON.stringify(data);
 		  }
-        })
-        .finally(function() {
-          $scope.explainLoading = false;
-          $scope.$apply()
         });
 	}
 

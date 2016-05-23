@@ -1,6 +1,5 @@
 // Create the queryTextarea editor
-window.onload = function() {
-  window.editor = CodeMirror.fromTextArea(document.getElementById('queryTextarea'), {
+window.onload = function() {window.editor = CodeMirror.fromTextArea(document.getElementById('queryTextarea'), {
     mode: 'text/x-mysql',
     indentWithTabs: true,
     smartIndent: true,
@@ -8,8 +7,8 @@ window.onload = function() {
     matchBrackets : true,
     autofocus: true,
     extraKeys: {
-      "Ctrl-Space": "autocomplete",
-      "Ctrl-Enter": angular.element($("#queryTextarea")).scope().search
+      "Ctrl-Space": "autocomplete"
+      // "Ctrl-Enter": angular.element($("#queryTextarea")).scope().search
     } 
   });
   
@@ -21,4 +20,12 @@ window.onload = function() {
     lineNumbers: true,
     matchBrackets : true
   });
+
+    window.explainAexp = CodeMirror.fromTextArea(document.getElementById('explainAexp'), {
+        mode: 'application/json',
+        indentWithTabs: true,
+        smartIndent: true,
+        lineNumbers: true,
+        matchBrackets : true
+    });
 };

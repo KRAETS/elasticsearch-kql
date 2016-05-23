@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
     <link href="style.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="vendor/dataTables/css/jquery.dataTables.min.css"/>
- 
+    <link href="vendor/carousel/angular-carousel.css" rel="stylesheet" type="text/css" />
   </head>
 
   <body ng-app="elasticsearchKqlApp" ng-controller="MainController">
@@ -155,66 +155,72 @@
 
     </div>
         <div class="col-sm-8 col-md-10 main">
-          <h1 class="page-header">KQL Query</h1>
+          <h1 class="page-header">KQL</h1>
 
-          <!-- Query area -->
-          <div class="search-area">
-          	<textarea id="queryTextarea">SELECT * FROM myindex</textarea>
-  	        <button type="button" ng-click="search()" id="searchButton" class="btn btn-success search-button" ng-bind-html="getButtonContent(searchLoading,'Search')" ng-cloak>
-            </button>
 
-            <button type="button" ng-click="explain()" id="explainButton" class="btn btn-info explain-button" ng-bind-html="getButtonContent(explainLoading,'Explain')" ng-cloak>
-            </button>
+              <!-- Query area -->
+              <div class="search-area">
+                <textarea id="queryTextarea">SELECT * FROM myindex</textarea>
+                <button type="button" ng-click="search()" id="searchButton" class="btn btn-success search-button" ng-bind-html="getButtonContent(searchLoading,'Search')" ng-cloak>
+                </button>
 
-            
-            <button type="button" ng-click="exportCSV()" id="exportCSV" class="btn btn-primary " ng-cloak>Export CSV <span class="glyphicon glyphicon-share"></span></button>
-            <button type="next" ng-click="nextSearch()" id="nextButton" class="btn btn-warning next-button" ng-disabled="!gotNext" ng-bind-html="getButtonContent(nextLoading,'<span class=\'glyphicon rotate-glyph glyphicon-step-forward\'></span>')" ng-cloak> 
-            </button>
-            <button type="fetchAll" ng-click="fetchAll()" id="fetchAllButton" class="btn btn-warning next-button" ng-disabled="!gotNext" ng-bind-html="getButtonContent(fetchAllLoading ,'<span class=\'glyphicon rotate-glyph glyphicon-fast-forward\'></span>')" ng-cloak> 
-            </button>
+                <button type="button" ng-click="explain()" id="explainButton" class="btn btn-info explain-button" ng-bind-html="getButtonContent(explainLoading,'Explain')" ng-cloak>
+                </button>
 
-  	      </div>
 
-          <!-- Error box, displayed only on errors -->
-          <div id="errorBox" ng-hide="error == ''" class="alert alert-danger fadein" role="alert" ng-cloak>
-            <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-            <span class="sr-only">Error:</span>
-            <span ng-model="error">{{error}}</span>
-          </div>
+                <button type="button" ng-click="exportCSV()" id="exportCSV" class="btn btn-primary " ng-cloak>Export CSV <span class="glyphicon glyphicon-share"></span></button>
+                <button type="next" ng-click="nextSearch()" id="nextButton" class="btn btn-warning next-button" ng-disabled="!gotNext" ng-bind-html="getButtonContent(nextLoading,'<span class=\'glyphicon rotate-glyph glyphicon-step-forward\'></span>')" ng-cloak>
+                </button>
+                <button type="fetchAll" ng-click="fetchAll()" id="fetchAllButton" class="btn btn-warning next-button" ng-disabled="!gotNext" ng-bind-html="getButtonContent(fetchAllLoading ,'<span class=\'glyphicon rotate-glyph glyphicon-fast-forward\'></span>')" ng-cloak>
+                </button>
 
-          <!-- Results area, displayed after search -->
-          <div class="fadein" ng-show="resultsColumns.length > 0 || showResults" ng-cloak>
-          	<div>
-            	<h2 class="sub-header">Results ({{amountDescription}})</h2>             		
-         		</div>
+              </div>
 
-            <div class="table-responsive" id ="searchResultZone">
-              <table class="table table-striped" id="searchResult">
-                <!-- <thead>
-                  <tr id="tableHead">
-                    <th ng-repeat="column in resultsColumns">{{column}}</th>
-                  </tr>
-                </thead>
-                <tbody id="tableBody">
-                  <tr ng-repeat="row in resultsRows">
-                    <td ng-repeat="column in resultsColumns">
-                      {{row[column]}}
-                    </td>
-                  </tr>
-                </tbody> -->
-              </table>
-            </div>
+              <!-- Error box, displayed only on errors -->
+              <div id="errorBox" ng-hide="error == ''" class="alert alert-danger fadein" role="alert" ng-cloak>
+                <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                <span class="sr-only">Error:</span>
+                <span ng-model="error">{{error}}</span>
+              </div>
 
-          
-          </div>
+              <!-- Results area, displayed after search -->
+              <div class="fadein" ng-show="resultsColumns.length > 0 || showResults" ng-cloak>
+                <div>
+                  <h2 class="sub-header">Results ({{amountDescription}})</h2>
+                </div>
 
-          <!-- explan area , displayed after explan -->
-           <div class="fadein" ng-show="resultExplan" ng-cloak>
-            <h2 class="sub-header">Results</h2>
-            <div class="table-responsive">
-              <textarea id="explanResult"></textarea> 
-            </div>
-          </div>
+                <div class="table-responsive" id ="searchResultZone">
+                  <table class="table table-striped" id="searchResult">
+                    <!-- <thead>
+                      <tr id="tableHead">
+                        <th ng-repeat="column in resultsColumns">{{column}}</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                      <tr ng-repeat="row in resultsRows">
+                        <td ng-repeat="column in resultsColumns">
+                          {{row[column]}}
+                        </td>
+                      </tr>
+                    </tbody> -->
+                  </table>
+                </div>
+
+
+              </div>
+
+              <!-- explain area , displayed after explan -->
+              <div class="fadein" ng-show="resultExplan" ng-cloak>
+                <h2 class="sub-header">Results</h2>
+                <h3 class="sub-header">Elasticsearch Query</h3>
+                <div class="table-responsive">
+                  <textarea id="explanResult"></textarea>
+                </div>
+                <h3 class="sub-header">A-Expression Resolution</h3>
+                <div class="table-responsive">
+                  <textarea id="explainAexp"></textarea>
+                </div>
+              </div>
 
         </div>
       </div>
@@ -245,7 +251,8 @@
     <script src="vendor/angularjs/angular.min.js"></script>
     <script src="vendor/angularjs/angular-animate.min.js"></script>
     <script src="vendor/angularjs/angular-sanitize.min.js"></script>
-    
+
+    <script src="vendor/carousel/angular-carousel.min.js"></script>
 
     <script src="table_presenter.js"></script>  
     <script src="editor.js"></script>
